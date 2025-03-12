@@ -69,16 +69,3 @@
 - **recommend_deposit(principal: float, annual_rate: float, term_in_years: int, threshold: float = 100_000.0, bonus_rate: float = 0.05) -> BankDeposit**  
   - Возвращает объект вклада с максимальной прибылью.  
 
----
-
-## Запуск проекта  
-
-Для работы необходим Python 3.8+.  
-
-```sh
-# Клонирование репозитория
-git clone <репозиторий>
-cd <папка_проекта>
-
-# Запуск
-python main.py
