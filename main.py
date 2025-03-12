@@ -1,177 +1,100 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import List, Union
+from typing import List
 
-# Абстрактный базовый класс, в котором объявлены все методы, используемые в классе Roman.
-class NumberBase(ABC):
-    @abstractmethod
-    def to_int(self) -> int:
-        pass
+class BankDeposit(ABC):
 
-    @abstractmethod
-    def to_roman(self) -> str:
-        pass
+    def __init__(self, principal: float, annual_rate: float, term_in_years: int) -> None:
+        self.principal: float = principal
+        self.annual_rate: float = annual_rate
+        self.term_in_years: int = term_in_years
 
     @abstractmethod
-    def __call__(self) -> int:
+    def calculate_profit(self) -> float:
         pass
-
-    @abstractmethod
-    def __add__(self, other: 'NumberBase') -> 'NumberBase':
-        pass
-
-    @abstractmethod
-    def __sub__(self, other: 'NumberBase') -> 'NumberBase':
-        pass
-
-    @abstractmethod
-    def __mul__(self, other: 'NumberBase') -> 'NumberBase':
-        pass
-
-    @abstractmethod
-    def __truediv__(self, other: 'NumberBase') -> 'NumberBase':
-        pass
-
-    @abstractmethod
-    def __str__(self) -> str:
-        pass
-
-
-# Класс Roman: реализует преобразование между int и римской записью, арифметические операции и метод __call__
-class Roman(NumberBase):
-    def __init__(self, value: Union[int, str]) -> None:
-        if isinstance(value, int):
-            self.__value = value
-        else:
-            self.__value = self.roman_to_int(value)
-
-    def to_int(self) -> int:
-        # Возвращает число в виде int
-        return self.__value
-
-    def to_roman(self) -> str:
-        # Возвращает число в виде римской записи
-        return self.int_to_roman(self.__value)
-
-    def __add__(self, other: 'Roman') -> 'Roman':
-        # Складывает два римских числа и возвращает новый объект Roman
-        return Roman(self.__value + other.to_int())
-
-    def __sub__(self, other: 'Roman') -> 'Roman':
-        # Вычитает два римских числа, если результат меньше 1 – ошибка
-        new_val = self.__value - other.to_int()
-        if new_val < 1:
-            raise ValueError("Result must be > 0.")
-        return Roman(new_val)
-
-    def __mul__(self, other: 'Roman') -> 'Roman':
-        # Умножает два римских числа
-        return Roman(self.__value * other.to_int())
-
-    def __truediv__(self, other: 'Roman') -> 'Roman':
-        # Делит два римских числа (целочисленное деление)
-        if other.to_int() == 0:
-            raise ZeroDivisionError("Division by zero.")
-        new_val = self.__value // other.to_int()
-        if new_val < 1:
-            raise ValueError("Result must be > 0.")
-        return Roman(new_val)
-
-    @staticmethod
-    def roman_to_int(roman_str: str) -> int:
-        # Преобразует римскую строку в целое число
-        roman_map = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}
-        total = 0
-        prev_value = 0
-        for ch in reversed(roman_str):
-            value = roman_map.get(ch, 0)
-            if value >= prev_value:
-                total += value
-            else:
-                total -= value
-            prev_value = value
-        return total
-
-    @staticmethod
-    def int_to_roman(number: int) -> str:
-        # Преобразует целое число в римскую запись
-        roman_numerals = [
-            (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
-            (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
-            (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")
-        ]
-        result = []
-        for arabic, roman_sym in roman_numerals:
-            while number >= arabic:
-                result.append(roman_sym)
-                number -= arabic
-        return "".join(result)
 
     def __str__(self) -> str:
-        # Метод для получения строкового представления объекта
-        return self.to_roman()
-    
-    def __call__(self) -> int:
-        # При вызове объекта возвращает число в виде int
-        return self.__value
+        return f"{self.__class__.__name__} (principal={self.principal}, rate={self.annual_rate}, term={self.term_in_years})"
 
-# Класс TArray: хранит список объектов Roman и реализует метод __call__ для суммирования элементов
-class TArray:
-    def __init__(self, values: List[Union[int, str]]) -> None:
-        # Преобразует каждый элемент списка в объект Roman
-        self._items = [Roman(v) for v in values]
 
-    def __call__(self) -> Roman:
-        # При вызове объекта суммирует все элементы и возвращает объект Roman с результатом
-        if not self._items:
-            raise ValueError("Empty array.")
-        total = self._items[0]
-        for item in self._items[1:]:
-            total = total + item
-        return total
+class TermDeposit(BankDeposit):
+    def calculate_profit(self) -> float:
+        return self.principal * self.annual_rate * self.term_in_years
 
-    def __str__(self) -> str:
-        # Возвращает строковое представление массива: римские записи всех элементов
-        return "[" + ", ".join(item.to_roman() for item in self._items) + "]"
 
-# Пример использования с комментариями результата каждого метода
+class BonusDeposit(TermDeposit):
+    def __init__(
+        self,
+        principal: float,
+        annual_rate: float,
+        term_in_years: int,
+        bonus_rate: float,
+        threshold: float
+    ) -> None:
+        super().__init__(principal, annual_rate, term_in_years)
+        self.bonus_rate: float = bonus_rate
+        self.threshold: float = threshold
 
-# Создаем массив объектов Roman из чисел [3, 1, 4, 1, 5, 9]
-arr = TArray([3, 1, 4, 1, 5, 9])
-print("Исходный массив:", arr)
-# Результат работы __str__ TArray:
-# Вывод: Исходный массив: [III, I, IV, I, V, IX]
+    def calculate_profit(self) -> float:
+        base_profit = super().calculate_profit()  # используем формулу простых процентов
+        if self.principal > self.threshold:
+            base_profit += base_profit * self.bonus_rate
+        return base_profit
 
-# Вызов TArray как функции (метод __call__) для получения суммы элементов
-total_roman = arr()
-print("Сумма элементов (римскими):", total_roman)
-# Результат работы __call__ TArray и __add__ Roman:
-# Сумма: 3 + 1 + 4 + 1 + 5 + 9 = 23, римской записью: XXIII
 
-# Вызов объекта Roman как функции (метод __call__) для получения целочисленного значения
-print("Сумма элементов (целое число):", total_roman())
-# Результат работы __call__ Roman:
-# Вывод: 23
+class CapitalizedDeposit(BankDeposit):
+    def calculate_profit(self) -> float:
+        return self.principal * ((1 + self.annual_rate) ** self.term_in_years - 1)
 
-# Демонстрация арифметических операций с римскими числами
-r1 = Roman("X")  # "X" = 10
-r2 = Roman("V")  # "V" = 5
 
-sum_result = r1 + r2
-print("X + V =", sum_result)
-# Результат работы __add__:
-# 10 + 5 = 15, римской записью: XV
+def recommend_deposit(
+    principal: float,
+    annual_rate: float,
+    term_in_years: int,
+    threshold: float = 100_000.0,
+    bonus_rate: float = 0.05
+) -> BankDeposit:
+    deposits: List[BankDeposit] = [
+        TermDeposit(principal, annual_rate, term_in_years),
+        BonusDeposit(principal, annual_rate, term_in_years, bonus_rate, threshold),
+        CapitalizedDeposit(principal, annual_rate, term_in_years)
+    ]
 
-sub_result = r1 - r2
-print("X - V =", sub_result)
-# Результат работы __sub__:
-# 10 - 5 = 5, римской записью: V
+    # Сравниваем вклады по рассчитанной прибыли и возвращаем наиболее выгодный
+    best_deposit = max(deposits, key=lambda d: d.calculate_profit())
+    return best_deposit
 
-mul_result = r1 * r2
-print("X * V =", mul_result)
-# Результат работы __mul__:
-# 10 * 5 = 50, римской записью: L
 
-div_result = r1 / r2
-print("X / V =", div_result)
-# Результат работы __truediv__:
-# 10 // 5 = 2, римской записью: II
+
+
+# Пример 1: Срочный вклад (TermDeposit)
+deposit1 = TermDeposit(100_000, 0.1, 3)
+print(f"Тип вклада: {deposit1}")  
+print(f"Ожидаемая прибыль: {deposit1.calculate_profit():.2f}")  
+# Ожидаемый результат:
+# Тип вклада: TermDeposit (principal=100000, rate=0.1, term=3)
+# Ожидаемая прибыль: 30000.00
+
+# Пример 2: Бонусный вклад (BonusDeposit) с превышением порога
+deposit2 = BonusDeposit(150_000, 0.1, 3, bonus_rate=0.05, threshold=100_000)
+print(f"Тип вклада: {deposit2}")  
+print(f"Ожидаемая прибыль: {deposit2.calculate_profit():.2f}")  
+# Ожидаемый результат:
+# Тип вклада: BonusDeposit (principal=150000, rate=0.1, term=3)
+# Ожидаемая прибыль: 47250.00 (т.к. 150000 * 0.1 * 3 = 45000 + 5% бонуса)
+
+# Пример 3: Вклад с капитализацией (CapitalizedDeposit)
+deposit3 = CapitalizedDeposit(100_000, 0.1, 3)
+print(f"Тип вклада: {deposit3}")  
+print(f"Ожидаемая прибыль: {deposit3.calculate_profit():.2f}")  
+# Ожидаемый результат:
+# Тип вклада: CapitalizedDeposit (principal=100000, rate=0.1, term=3)
+# Ожидаемая прибыль: 33100.00 (100000 * ((1 + 0.1)^3 - 1))
+
+# Пример 4: Рекомендация лучшего вклада
+best_deposit = recommend_deposit(150_000, 0.1, 3)
+print(f"Лучший вариант вклада: {best_deposit}")  
+print(f"Максимальная ожидаемая прибыль: {best_deposit.calculate_profit():.2f}")  
+# Ожидаемый результат:
+# Лучший вариант вклада: CapitalizedDeposit (principal=150000, rate=0.1, term=3)
+# Максимальная ожидаемая прибыль: 49650.00 (сложные проценты при капитализации)
